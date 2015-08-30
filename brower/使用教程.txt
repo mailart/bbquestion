@@ -1,0 +1,17 @@
+添加css和js
+<link href="https://www.humber.ca/bb91help/lichuan/bbquestion/brower/css/bbqa.css" rel="stylesheet">
+
+
+<script src="https://www.humber.ca/bb91help/lichuan/bbquestion/brower/js/bbqa/dep/tinymce.min.js"></script>
+<script src="https://www.humber.ca/bb91help/lichuan/bbquestion/brower/js/bbqa/bbqa.js"></script>
+
+设置课程章节参数
+<body id="module09" data-page="3"  data-professorid="wnlc0002" data-professormail="lichuanwen.1189@gmail.com" data-">
+id和data-page是已有的，data-moudleid和data-professorid是我们的
+
+data-professorid  数据库中老师的id，用来识别登陆的是不是老师
+data-professormail  xxx@aa.com 老师的邮件
+
+
+插入问题组建到页面
+<div class="bbqa_container">

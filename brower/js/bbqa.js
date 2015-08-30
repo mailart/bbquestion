@@ -9,7 +9,9 @@
 document.write("<script language='javascript' src='./dep/tinymce.min.js'></script>");
 
 var rootHost = "https://www.humber.ca/bb91help/lichuan/bbquestion/";
-var template =   "Dear $pname:\r\n\r\nIn course $course, your student $studentname asked question that $qcontent according to $keyword in the module.\r\n\r\nPlease visit https://learn.humber.ca for more details.";
+var template =   "In course $course, \r\n\r\nYour student $studentname asked a question according to <font style=\"color:red\">\"$keyword\"</font> in the module $module.\r\n\r\nPlease log into blackboard and open <a href=\"$url\" target=\"_blank\">here</a> to review\r\n\r\nThanks"
+var template2 =  "Dear $studentname,\r\n\r\nIn course $course, $pname has answered your question about <font style=\"color:red\">\"$keyword\"</font> in the module $module.\r\n\r\nPlease log into blackboard and click <a href=\"$url\" target=\"_blank\">here</a> to read\r\n\r\nThanks";
+var template3 =   "In course $course, \r\n\r\n$name posted a new reply on the question according to <font style=\"color:red\">\"$keyword\"</font> in the module $module.\r\n\r\nPlease log into blackboard and click <a href=\"$url\" target=\"_blank\">here</a> to review\r\n\r\nThanks";
 
 var framework = '<a class="text-right btn bbqa btn-primary btn-block"><i class="fa fa-question"></i>Ask a Question</a>'+
                 '<div class="askDlg">'+
@@ -139,7 +141,7 @@ $(document).ready(function() {
         root.find(".askDlg").hide();
     }
     
-    function sendToUser(user, msg){
+    function sendToUser(user, msg, callback){
         var url = "https://learn.humber.ca/webapps/blackboard/execute/displayEmail?navItem=cp_send_email_select_students&course_id="
         url += userInfo.courseid;
         if (user === userInfo.id)
@@ -172,7 +174,7 @@ $(document).ready(function() {
                     var name = $(this).attr("name");
                     var val = $(this).val();
                     if (name === "subject")
-                        val = "old question";
+                        val = "Your have a new reply";
                     else if (name === "multiselect_right_values")
                         val = selUserId;
                     else if (name === "USERS_SELECTED")
@@ -215,7 +217,8 @@ $(document).ready(function() {
                     
                     },
                     complete:function(){
-                        
+                        if (callback)
+                            callback();
                     }
                 });
 
@@ -223,7 +226,7 @@ $(document).ready(function() {
             }});
     }
 
-    function sendToInstructors( msg){
+    function sendToInstructors( msg,isreply){
         var url = "https://learn.humber.ca/webapps/blackboard/execute/displayEmail?navItem=cp_send_email_all_instructors&course_id="
         url += userInfo.courseid;
 
@@ -246,7 +249,7 @@ $(document).ready(function() {
                     var name = $(this).attr("name");
                     var val = $(this).val();
                     if (name === "subject")
-                        val = "new question";
+                        val = isreply ? "Question Updated":"You have a new question";
 
                     if (name !== "top_Cancel" &&
                         name !== "top_Submit"&&
@@ -344,10 +347,16 @@ $(document).ready(function() {
             dataType: 'json',
             
             complete: function (data) {
-            
-              modeChange(e);  
-              loadQuestions();
-              sendToInstructors("thsi is a test for ataset");
+                var t = template;
+                t = t.replace("$course",userInfo.courseName);
+                t = t.replace("$keyword",mytext);
+                t = t.replace("$module",userInfo.moduleName);
+                t = t.replace("$url",userInfo.url);
+                t = t.replace("$studentname",userInfo.id);
+
+                modeChange(e);  
+                loadQuestions();
+                sendToInstructors(t);
             },
             data: data
         });
@@ -498,6 +507,8 @@ $(document).ready(function() {
                     var course = userInfo.courseName;
                     var isProfessor = (professorname === userInfo.id);
                     var author = root.find(".thread_author").text();
+                    var keyword = root.find(".tkeyword").text();
+                    
                     var isAuthor = (author === userInfo.id);
                     
 
@@ -512,10 +523,27 @@ $(document).ready(function() {
                         type: 'post',
                         dataType: 'json',
                         complete: function (data) {
+                            var t = template2;
+                            t = t.replace("$course",userInfo.courseName);
+                            t = t.replace("$keyword",keyword);
+                            t = t.replace("$module",userInfo.moduleName);
+                            t = t.replace("$url",userInfo.url + "&qid=" + id);
+                            t = t.replace("$studentname",author);
+                            t = t.replace("$pname",userInfo.id);
+
+
                             tinyMCE.activeEditor.setContent("");
                             loadReply(id,root);
-                            sendToUser(author,"this a test");
-                            sendToInstructors("this a test reply");
+                            sendToUser(author,t,function(){
+                                t = template3;
+                                t = t.replace("$course",userInfo.courseName);
+                                t = t.replace("$keyword",keyword);
+                                t = t.replace("$module",userInfo.moduleName);
+                                t = t.replace("$url",userInfo.url + "&qid=" + id);
+                                t = t.replace("$studentname",author);
+                                t = t.replace("$name",userInfo.id);
+                                sendToInstructors(t,true);
+                            });
                         },
                         data: data
                     });

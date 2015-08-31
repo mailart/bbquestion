@@ -31,12 +31,17 @@ class threadModel extends Model {
         $sql = "INSERT INTO highlight (uid, name,email, context,keyword,pageid,qdate) VALUES ($uid,'$name','$mail','$text','$keyword','$pid','".date("Y-m-d H:i:s")."')";
 
      	$sth = $this->dbh->prepare($sql);
-        $ret = $sth->execute();
-        if (!$ret) {
-        	//var_dump($this->dbh->errorInfo ());
-            die("exec error");
-        }
-        return 0;//success
+      $ret = $sth->execute();
+      if (!$ret) {
+      	//var_dump($this->dbh->errorInfo ());
+        die("exec error");
+      }
+      else
+      {
+        $id = $this->dbh->lastInsertId();
+        echo($id);
+      }
+      return 0;//success
     }
 
 

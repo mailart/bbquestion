@@ -97,6 +97,9 @@ $(document).ready(function() {
     var mytext;
     var userInfo = {};
     var questions;
+    $('head').append('<link rel="stylesheet" href="https://www.humber.ca/bb91help/lichuan/bbquestion/brower/css/bbqa.css">');
+
+
     root.append(framework);
     if (!window.x) {
         x = {};
@@ -135,7 +138,7 @@ $(document).ready(function() {
             root.find(".bbqa").text("Select From Content");
         }
         else
-            root.find(".bbqa").text("Ask Question");
+            root.find(".bbqa").text("Ask a Question");
 
         isTextSelectMode = !isTextSelectMode;
         root.find(".askDlg").hide();
@@ -144,8 +147,11 @@ $(document).ready(function() {
     function sendToUser(user, msg, callback){
         var url = "https://learn.humber.ca/webapps/blackboard/execute/displayEmail?navItem=cp_send_email_select_students&course_id="
         url += userInfo.courseid;
-        if (user === userInfo.id)
+        if (user === userInfo.id){
+            if (callback)
+                callback();
             return;
+        }
 
         $.ajax({
             url: url,
@@ -334,7 +340,8 @@ $(document).ready(function() {
         
         var pid = userInfo.moduleid;
         var content = tinyMCE.activeEditor.getContent({format : 'raw'});
-        var data = {"uid":1212,"name":userInfo.id,"mail":userInfo.email,"text":content,"keyword":mytext,
+        var cid = userInfo.courseid;
+        var data = {"uid":parseInt(cid.replace(/_/g,"")),"name":userInfo.id,"mail":userInfo.email,"text":content,"keyword":mytext,
             "pid":pid};
         tinyMCE.activeEditor.setContent("");
         if (content == "<p><br data-mce-bogus=\"1\"></p>"){
@@ -347,16 +354,19 @@ $(document).ready(function() {
             dataType: 'json',
             
             complete: function (data) {
-                var t = template;
-                t = t.replace("$course",userInfo.courseName);
-                t = t.replace("$keyword",mytext);
-                t = t.replace("$module",userInfo.moduleName);
-                t = t.replace("$url",userInfo.url);
-                t = t.replace("$studentname",userInfo.id);
-
-                modeChange(e);  
-                loadQuestions();
-                sendToInstructors(t);
+                if (data.responseText.indexOf("ok") !== -1){
+                    var t = template;
+                    var tid = data.responseText.replace("ok","");
+                    t = t.replace("$course",userInfo.courseName);
+                    t = t.replace("$keyword",mytext);
+                    t = t.replace("$module",userInfo.moduleName);
+                    t = t.replace("$url",userInfo.url + "&qid=" + tid);
+                    t = t.replace("$studentname",userInfo.id);
+                    userInfo.qid = tid;
+                    modeChange(e);  
+                    loadQuestions();
+                    sendToInstructors(t);
+                }
             },
             data: data
         });
@@ -422,14 +432,20 @@ $(document).ready(function() {
                 var values;
                 var courseName = $(".comboLink",window.parent.document).text();
                 var moduleName = $("#pageTitleText",window.parent.document).text();
-                
                 var rooturl= window.parent.document.URL;
                 var mid = rooturl;
+                var qid = "";
+                var parenturl = rooturl;
+                if (rooturl.indexOf("qid=") !== -1){
+                    qid = rooturl.substring(rooturl.indexOf("qid=")+4);
+                    parenturl = rooturl.substring(0,rooturl.indexOf("qid="));
+                }
                 rooturl = rooturl.substring(rooturl.indexOf("course_id=") + 10);
                 rooturl = rooturl.substring(0,rooturl.indexOf("&"));
 
                 mid = mid.substring(mid.indexOf("content_id=") + 12);
-                mid = mid.substring(0,mid.indexOf("_"));
+                mid = mid.replace("_","");
+                mid = mid.substring(0,mid.indexOf("&"));
 
                 ol = ol.substring(ol.indexOf("<ol>"));
                 ol = ol.substring(0,ol.indexOf("</ol>") + 5);
@@ -443,7 +459,7 @@ $(document).ready(function() {
                 dom = $.parseHTML(ol);
                 values = $(dom).find(".field");
                 name = filter(values.eq(0).text());
-                userInfo = {"id":id,"uname":name,"email":email,"courseid":rooturl,"moduleid":parseInt(mid),"courseName":courseName,"moduleName":moduleName,"url":window.parent.document.URL};
+                userInfo = {"id":id,"uname":name,"email":email,"courseid":rooturl,"moduleid":parseInt(mid),"courseName":courseName,"moduleName":moduleName,"url":parenturl,"qid":qid};
                 loadQuestions(); 
             }});
     };
@@ -481,10 +497,29 @@ $(document).ready(function() {
                 
                // alert("asdfasdf");
             }
-            
-                    
+            if (userInfo.qid > "")
+                expandQuestion(userInfo.qid);
+        }
+    }
+
+    function expandQuestion(qid){
+        var item = $(".ttitle[data-threadid=\"" +qid +"\"");
+        var keyword = item.parent().find(".ttitle").data("keyword");
+        
+
+        if (item.attr('class').indexOf("topened") !== -1){
+            item.parent().find(".thread").hide();
+            item.removeClass("topened");
+        }
+        else{
+        //    $(".thread").hide();    
+            markKeyword(keyword);
+            item.parent().find(".thread").show();
+            item.addClass("topened");
+            loadReply(qid,item.parent());
 
         }
+
     }
 
     function loadQuestions(){
@@ -508,11 +543,9 @@ $(document).ready(function() {
                     var isProfessor = (professorname === userInfo.id);
                     var author = root.find(".thread_author").text();
                     var keyword = root.find(".tkeyword").text();
-                    
                     var isAuthor = (author === userInfo.id);
-                    
-
-                    var data = {"uid":1212,"name":userInfo.id,"context":content,"tid":id,/*"mail2":mail,"isProfessor":isProfessor,"isAuthor":isAuthor,"pname":professorname,"course":course*/};
+                    var cid = userInfo.courseid;
+                    var data = {"uid":parseInt(cid.replace(/_/g,"")),"name":userInfo.id,"context":content,"tid":id,/*"mail2":mail,"isProfessor":isProfessor,"isAuthor":isAuthor,"pname":professorname,"course":course*/};
 
                    if (content == "<p><br data-mce-bogus=\"1\"></p>"){
                         alert("Please enter your question.");
@@ -523,27 +556,29 @@ $(document).ready(function() {
                         type: 'post',
                         dataType: 'json',
                         complete: function (data) {
-                            var t = template2;
-                            t = t.replace("$course",userInfo.courseName);
-                            t = t.replace("$keyword",keyword);
-                            t = t.replace("$module",userInfo.moduleName);
-                            t = t.replace("$url",userInfo.url + "&qid=" + id);
-                            t = t.replace("$studentname",author);
-                            t = t.replace("$pname",userInfo.id);
-
-
-                            tinyMCE.activeEditor.setContent("");
-                            loadReply(id,root);
-                            sendToUser(author,t,function(){
-                                t = template3;
+                            if (data.responseText.indexOf("ok") !== -1){
+                                var t = template2;
                                 t = t.replace("$course",userInfo.courseName);
                                 t = t.replace("$keyword",keyword);
                                 t = t.replace("$module",userInfo.moduleName);
                                 t = t.replace("$url",userInfo.url + "&qid=" + id);
                                 t = t.replace("$studentname",author);
-                                t = t.replace("$name",userInfo.id);
-                                sendToInstructors(t,true);
-                            });
+                                t = t.replace("$pname",userInfo.id);
+
+
+                                tinyMCE.activeEditor.setContent("");
+                                loadReply(id,root);
+                                sendToUser(author,t,function(){
+                                    t = template3;
+                                    t = t.replace("$course",userInfo.courseName);
+                                    t = t.replace("$keyword",keyword);
+                                    t = t.replace("$module",userInfo.moduleName);
+                                    t = t.replace("$url",userInfo.url + "&qid=" + id);
+                                    t = t.replace("$studentname",author);
+                                    t = t.replace("$name",userInfo.id);
+                                    sendToInstructors(t,true);
+                                });
+                            }
                         },
                         data: data
                     });
@@ -553,38 +588,27 @@ $(document).ready(function() {
 
                     var item = $(e.target);
                     var tid = item.data("threadid");
-                    var keyword = item.parent().find(".ttitle").data("keyword");
+                    
 
                     if (e.target.className.indexOf('ttitle') === -1)
                         return;
 
-                    markKeyword(keyword);
 
                     e.preventDefault();
-                    if (e.target.className.indexOf("topened") !== -1){
-                        item.parent().find(".thread").hide();
-                        item.removeClass("topened");
-                    }
-                    else{
-                      //  $(".thread").hide();    
-                        item.parent().find(".thread").show();
-                        item.addClass("topened");
-                        loadReply(tid,item.parent());
-
-                    }
+                    expandQuestion(tid);
                 });
 
                 $(".ttopic").click(function(e){
                     var item = $(e.target).parent();
                     var tid = item.data("threadid");
-                    var keyword = item.parent().find(".ttitle").data("keyword");
-        
+                    
                     if (e.target.className.indexOf('ttopic') === -1)
                         return;
 
-                    markKeyword(keyword);
-
+                   
                     e.preventDefault();
+
+                    expandQuestion(tid);/*
                     if (item.attr('class').indexOf("topened") !== -1){
                         item.parent().find(".thread").hide();
                         item.removeClass("topened");
@@ -595,7 +619,7 @@ $(document).ready(function() {
                         item.addClass("topened");
                         loadReply(tid,item.parent());
 
-                    }
+                    }*/
                 });
 
                 tinymce.init({selector:'textarea',
@@ -653,7 +677,6 @@ $(document).ready(function() {
         theme: "modern",
         height : 100,
         menubar : false,
-        content_css : "../../assets/css/bbqa.css",
         plugins: [
              "advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker",
              "searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking",

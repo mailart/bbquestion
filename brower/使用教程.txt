@@ -1,6 +1,4 @@
 Ìí¼ÓcssºÍjs
-<link href="https://www.humber.ca/bb91help/lichuan/bbquestion/brower/css/bbqa.css" rel="stylesheet">
-
 
 <script src="https://www.humber.ca/bb91help/lichuan/bbquestion/brower/js/bbqa/dep/tinymce.min.js"></script>
 <script src="https://www.humber.ca/bb91help/lichuan/bbquestion/brower/js/bbqa/bbqa.js"></script>

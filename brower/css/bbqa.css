@@ -30,6 +30,7 @@ p{
 .bbqa{
  text-align: center;
   padding: 10px;
+  border: 4px solid #cc3333;
 }
 
 .askDlg{
@@ -133,4 +134,155 @@ hr{
   color: white;
   padding: 5px;
   border-radius: 5px;
+}
+
+.float_guide{
+    position: fixed;
+    z-index: 1000;
+    background: #674F79;
+    color: white;
+    padding: 50px;
+    font-size: 3em;
+    display: none;
+    border-radius: 10px;
+    top: 50%;
+    left: 50%;
+    margin-left: -440px;
+    box-shadow: 20px 20px 50px #63B56F;
+    padding-top: 20px;
+    padding-bottom: 60px;
+}
+
+<!--   border: 4px solid #FBF9F9;
+   box-shadow: 0px 0px 0px 10px #674F79;
+--!>
+.float_guide .desc{
+    font-size: 24px;
+    /* margin-top: -10px; */
+    position: relative;
+
+    left: 5px;
+}
+
+.float_guide .title{
+    margin-left: 20px;
+}
+
+.float_guide .buttons{
+    font-size: 18px;
+    color: white;
+    position: relative;
+    top: 30px;
+}
+
+.float_guide .buttons a{
+    font-size: 18px;
+    color: white;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.float_guide .buttons a:nth-child(1){
+    float:left;
+}
+
+.float_guide .buttons a:nth-child(2),
+.float_guide .buttons a:nth-child(3)
+{
+    float:right;
+}
+
+.stage_0 a:nth-child(1),
+.stage_0 .buttons a:nth-child(3){
+    display: none;
+}
+
+.stage_0 .buttons a:nth-child(2){
+
+    display: inline-block;
+}
+
+.stage_1 a:nth-child(1),
+.stage_1 a:nth-child(2),
+.stage_1 .buttons a:nth-child(3){
+    display: none;
+}
+
+.stage_0 .step:after{
+    content: "";
+}
+
+.stage_0  .title{
+
+    margin-left: 0px;
+}
+
+.stage_0 .title:after{
+    content: "Introduce a new Way to Interact with Professor";
+}
+
+.stage_0 .desc:after{
+    content: "Press 'Next' to learn 3 steps of new feture for your interactive study";
+}
+
+
+.stage_1 .step:after{
+    content: "1";
+}
+
+.stage_1 .title:after{
+    content: "Start a question";
+}
+
+.stage_1 .desc:after{
+    content: "Click button right for picking up content from course";
+}
+
+.stage_2 .step:after{
+    content: "2";
+}
+
+.stage_2 .title:after{
+    content: "Select anyting in content you are interested with";
+}
+
+.stage_2 .desc:after{
+    content: "Using your mouse to select any text in content";
+}
+
+#dialog-confirm{
+    display:none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    font-size: 1.3em;
+    background-color: #FFFFFF;
+    padding: 30px;
+    opacity: 1;
+    font-weight: bold;
+    margin-left: -300px;
+    width: 600px;
+    color: #cc3333;
+    border: 1px solid #cc3333;
+    border-radius: 5px;
+    margin-top: -120px;
+}
+
+#dialog-confirm a{
+    color: #cc3333;
+    cursor:pointer;
+}
+
+#dialog-confirm a:hover{
+    color: #ad3333;
+}
+
+#dialog-confirm .quit{
+    float:right;
+
+}
+
+#dialog-confirm .buttons{
+    margin-top: 50px;
+
 }

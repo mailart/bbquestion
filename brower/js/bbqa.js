@@ -13,7 +13,8 @@ var template =   "In course $course, \r\n\r\nYour student $studentname asked a q
 var template2 =  "Dear $studentname,\r\n\r\nIn course $course, $pname has answered your question about <font style=\"color:red\">\"$keyword\"</font> in the module $module.\r\n\r\nPlease log into blackboard and click <a href=\"$url\" target=\"_blank\">here</a> to read\r\n\r\nThanks";
 var template3 =   "In course $course, \r\n\r\n$name posted a new reply on the question according to <font style=\"color:red\">\"$keyword\"</font> in the module $module.\r\n\r\nPlease log into blackboard and click <a href=\"$url\" target=\"_blank\">here</a> to review\r\n\r\nThanks";
 
-var framework = '<a class="text-right btn bbqa btn-primary btn-block"><i class="fa fa-question"></i>Ask a Question</a>'+
+var framework = '<a class="text-right btn bbqa btn-primary btn-block">Got a Question ? (Click Here)</a>'+
+               
                 '<div class="askDlg">'+
                     '<span class="keyword" ></span>'+
                     '<textarea id="qkeyword"></textarea>'+
@@ -89,6 +90,19 @@ var reply =  '<textarea class="replytext"></textarea>'+
             '</div>'+
             '<div style="clear:both" ></div>';
                         
+var guide =  '<div class="float_guide stage_0">'+
+                '<span class="step"></span><span class="title"></span><br>'+
+                '<span class="desc"></span>'+
+                '<div class="buttons">'+
+                    '<a class="b1">Don\'t show dialog next time</a>'+
+                    '<a class="b2">Next</a>'+
+                    '<a class="b3">Close</a>'+
+                '</div>'+
+            ' </div>'+
+            '<div id="dialog-confirm" title="Empty the recycle bin?">'+
+                    '<p>When Using the "Got a Question" feature, please note that your submissions are not anonymous and are tied to your email address.</p>'+
+                    '<div class="buttons"><a class="hideNextTime">Don\'t show it again</a><a class="quit">OK</a></div>'
+            '</div>';
 
 $(document).ready(function() {
     var root = $(".bbqa_container");
@@ -97,13 +111,56 @@ $(document).ready(function() {
     var mytext;
     var userInfo = {};
     var questions;
+    var guideDom,alertDom;
+    var setting = JSON.parse(localStorage&&localStorage.getItem("QASetting"));
+    if (!setting){
+        setting = {'guide':true,'alert':true};
+        localStorage&&localStorage.setItem("QASetting", JSON.stringify(setting));
+    }
     $('head').append('<link rel="stylesheet" href="https://www.humber.ca/bb91help/lichuan/bbquestion/brower/css/bbqa.css">');
-
-
+    $('head',window.parent.document).append('<link rel="stylesheet" href="https://www.humber.ca/bb91help/lichuan/bbquestion/brower/css/bbqa.css">');
+    $('body',window.parent.document).append(guide);
+    guideDom = $('.float_guide',window.parent.document);
+    alertDom = $('#dialog-confirm',window.parent.document);
+    centerGuide();
     root.append(framework);
     if (!window.x) {
         x = {};
     }
+
+    alertDom.find("a").on("click",function(e){
+        console.log(e);
+        if (e.target.className === "quit"){
+            alertDom.remove();
+        }
+        else {
+           setting.alert = false;
+           localStorage&&localStorage.setItem("QASetting", JSON.stringify(setting));
+           alertDom.remove();
+        }
+        
+    });
+
+    guideDom.find("a").on("click",function(e){
+        console.log(e);
+        if (e.target.className === "b1"){
+            guideDom.hide();
+
+        }
+        else if (e.target.className === "b2"){
+            var stageIndex = guideDom.attr("class");
+            stageIndex = stageIndex.substring(stageIndex.indexOf("stage_") + 6);
+            guideDom.removeClass("stage_"+stageIndex);
+            stageIndex =parseInt(stageIndex);
+            stageIndex++;
+            guideDom.addClass("stage_" + stageIndex);
+            centerGuide();
+        }
+        else if (e.target.className === "b3"){
+            guideDom.hide();
+            
+        }
+    });
 
     
 
@@ -114,8 +171,21 @@ $(document).ready(function() {
 
     }
   */  
+    function alertMsg(){
+        if (!setting.alert)
+            return;
+        alertDom.show();
+    }
 
+    function centerGuide(){
+        var parentw = $(window.parent).width();
+        var parenth = $(window.parent).height();
+        var gwidth = guideDom.width() + 100;
+        var gheight = guideDom.height() + 80;
 
+        guideDom.css("margin-left",(0 - gwidth)/2);
+        guideDom.css("margin-top",(0 - gheight)/2);
+    }
 
     x.Selector = {};
     x.Selector.getSelected = function() {
@@ -135,10 +205,10 @@ $(document).ready(function() {
         if (!isTextSelectMode){
             //
 
-            root.find(".bbqa").text("Select From Content");
+            root.find(".bbqa").html("<div>Select Content</div><div>Highlight the content </div><div>that you want to know more about</div>");
         }
         else
-            root.find(".bbqa").text("Ask a Question");
+            root.find(".bbqa").text("Got a Question? (Click Here)");
 
         isTextSelectMode = !isTextSelectMode;
         root.find(".askDlg").hide();
@@ -506,7 +576,8 @@ $(document).ready(function() {
         var item = $(".ttitle[data-threadid=\"" +qid +"\"");
         var keyword = item.parent().find(".ttitle").data("keyword");
         
-
+        if (item.length == 0)
+            return;
         if (item.attr('class').indexOf("topened") !== -1){
             item.parent().find(".thread").hide();
             item.removeClass("topened");
@@ -532,7 +603,10 @@ $(document).ready(function() {
 
                 questions = JSON.parse(a);
                 renderQuestion();
-
+                if (!setting.guide){
+                //guideDom.fadeIn(1000);
+                }
+                centerGuide();
                 $(".replySubmit").click(function(e){
                     var root = $(e.target).parent().parent().parent();
                     var content = tinyMCE.activeEditor.getContent({format : 'raw'});
@@ -677,6 +751,11 @@ $(document).ready(function() {
         theme: "modern",
         height : 100,
         menubar : false,
+        setup: function(editor) {
+            editor.on('focus', function(e) {
+                alertMsg();
+            });
+        },
         plugins: [
              "advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker",
              "searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking",
@@ -684,4 +763,7 @@ $(document).ready(function() {
        ]
 
     });
+
+    
+
 });
